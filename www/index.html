@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>demo</title>
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/element-plus/dist/index.css"/>
+    <!-- Import Vue 3 -->
+    <script src="//cdn.jsdelivr.net/npm/vue@3"></script>
+    <!-- Import component library -->
+    <script src="//cdn.jsdelivr.net/npm/element-plus"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <style>
+        .container{
+            width: 60%;
+            margin: 0 auto;
+        }
+        .top{
+            margin-top: 30px;
+            border: 1px solid #e6e6e6;
+            padding: 20px 20px;
+        }
+        .middle{
+          float: right;
+          margin-top: 30px;
+        }
+        .bottom {
+            margin-top: 5px;
+            border: 1px solid #e6e6e6;
+            padding: 20px 20px;
+        }
+        .ml-30{
+            margin-left: 30px;
+        }
+        .clearfix { clear: both; }
+        .el-link {
+          margin-left: 10px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="app">
+        <div class="container">
+            <div class="top">
+                <el-upload
+                ref="upload"
+                class="upload-demo"
+                action="/admin/upload"
+                name="files"
+                multiple
+                :limit="limit"
+                :on-exceed="handleExceed"
+                :auto-upload="false"
+                :on-success="successHandler"
+              >
+                <template #trigger>
+                  <el-button type="primary">选择文件</el-button>
+                </template>
+                <el-button class="ml-30" type="success" @click="submitUpload">
+                  开始上传上传
+                </el-button>
+                <template #tip>
+                  <div class="el-upload__tip text-red">
+                    限制{{limit}}个文件
+                  </div>
+                </template>
+              </el-upload>
+            </div>
+            <div class="middle">
+              <el-button  type="success" @click="getAll">获取列表</el-button>
+            </div>
+            <div class="clearfix"></div>
+            <div class="bottom">
+              <el-table ref="tableRef" :data="tableData" border style="width: 100%">
+                <el-table-column prop="fileId" label="FileId"  width="300"></el-table-column>
+                <el-table-column prop="fileName" label="FileName"  ></el-table-column>
+                <el-table-column prop="mime" label="Mime"  ></el-table-column>
+                <el-table-column prop="size" label="Size"  ></el-table-column>
+                <el-table-column label="Action">
+                  <template #default="scope">
+                    <el-button size="small" type="danger" @click="del(scope.$index,scope.row)">删除</el-button>
+                    <el-link  :href="'/'+scope.row.fileId" target="_blank" type="primary">查看</el-link>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+      const App = {
+        data() {
+          return {
+            limit:2,
+            tableData:[]
+          };
+        },
+        methods:{
+          handleExceed(files){
+            this.$refs.upload.clearFiles();
+            const file=files[0];
+            file.uid = ElementPlus.genFileId();
+            this.$refs.upload.handleStart(file);
+          },
+          submitUpload(){
+            this.$refs.upload.submit();
+          },
+          successHandler(response){
+            response.forEach(res => {
+              this.tableData.push(res.data);
+            });
+          },
+          del(index,row){
+            axios.post('/admin/delete/'+row.fileId).then(resp=>{
+               if(resp.data.trim() == "ok"){
+                  this.tableData.splice(index,1);
+               }
+            })
+          },
+          getAll(){
+            axios.get('/admin/getall').then(resp=>{
+              const result=resp.data;
+              this.tableData=result.data;
+            });
+          }
+        }
+      };
+        const app = Vue.createApp(App);
+        app.use(ElementPlus);
+        app.mount("#app")
+    </script>
+
+</body>
+</html>
