@@ -1,76 +1,48 @@
 package model
 
 import (
-	"go-image/convert"
-	"net/http"
+	"fmt"
 	"strings"
 )
 
-type Goimg_req_t struct {
-	Grayscale int
-	Rotate    float64 //旋转
-	Width     uint
-	Height    uint
-	Quality   uint //图片质量
-	X         int
-	Y         int
-	P         int //原图
-	Download  int
-	Format    string
+type Request struct {
+	Grayscale  bool    `form:"g"` //灰阶
+	Rotate     float64 `form:"r"` //旋转
+	Width      uint    `form:"w"`
+	Height     uint    `form:"h"`
+	Quality    uint    `form:"q"` //图片质量
+	X          int     `form:"x"`
+	Y          int     `form:"y"`
+	Proportion int     `form:"p"` //分辨率
+	Download   bool    `form:"d"` //下载图片
+	Format     string  `form:"f"` //图片格式
+	FileId     string
 }
 
-func ParamHandler(req *Goimg_req_t, r *http.Request) {
-	if len(r.FormValue("g")) == 0 {
-		req.Grayscale = 0
-	} else {
-		req.Grayscale = convert.StringToInt(r.FormValue("g"))
-	}
+func (r *Request) FormatFileName() string {
+	return fmt.Sprintf("%d_%d_g%d_r%.f_p%d_x%d_y%d_q%d.%s", r.Width, r.Height, BtoI(r.Grayscale), r.Rotate, r.Proportion, r.X, r.Y, r.Quality, r.GetFormat())
+}
 
-	req.Rotate = convert.StringToFloat64(r.FormValue("r"))
-	req.Width = convert.StringToUint(r.FormValue("w"))
-	req.Height = convert.StringToUint(r.FormValue("h"))
-
-	q := convert.StringToUint(r.FormValue("q"))
-	if q == 0 || q > 100 {
-		req.Quality = 75
-	} else {
-		req.Quality = q
-	}
-
-	if len(r.FormValue("x")) == 0 {
-		req.X = -1
-	} else {
-		req.X = convert.StringToInt(r.FormValue("x"))
-	}
-
-	if len(r.FormValue("y")) == 0 {
-		req.Y = -1
-	} else {
-		req.Y = convert.StringToInt(r.FormValue("y"))
-	}
-
-	if len(r.FormValue("p")) == 0 {
-		req.P = 0
-	} else {
-		req.P = convert.StringToInt(r.FormValue("p"))
-	}
-
-	if len(r.FormValue("d")) == 0 {
-		req.Download = 0
-	} else {
-		req.Download = convert.StringToInt(r.FormValue("d"))
-	}
-
-	switch strings.ToLower(r.FormValue("f")) {
+func (r *Request) GetFormat() string {
+	switch strings.ToLower(r.Format) {
 	case "jpeg", "jpg":
-		req.Format = "jpeg"
+		r.Format = "jpeg"
 	case "png":
-		req.Format = "png"
+		r.Format = "png"
 	case "gif":
-		req.Format = "gif"
+		r.Format = "gif"
 	case "webp":
-		req.Format = "webp"
+		r.Format = "webp"
 	default:
-		req.Format = "jpeg"
+		r.Format = "jpeg"
 	}
+
+	return r.Format
+}
+
+func BtoI(b bool) uint8 {
+	if b {
+		return 1
+	}
+	return 0
 }

@@ -24,8 +24,8 @@
             padding: 20px 20px;
         }
         .middle{
-          float: right;
-          margin-top: 30px;
+            float: right;
+            margin-top: 30px;
         }
         .bottom {
             margin-top: 5px;
@@ -37,103 +37,125 @@
         }
         .clearfix { clear: both; }
         .el-link {
-          margin-left: 10px;
+            margin-left: 10px;
         }
     </style>
 
 </head>
 
 <body>
-    <div id="app">
-        <div class="container">
-            <div class="top">
-                <el-upload
-                ref="upload"
-                class="upload-demo"
-                action="/admin/upload"
-                name="files"
-                multiple
-                :limit="limit"
-                :on-exceed="handleExceed"
-                :auto-upload="false"
-                :on-success="successHandler"
-              >
+<div id="app">
+    <div class="container">
+        <div class="top">
+            <el-upload
+                    ref="upload"
+                    class="upload-demo"
+                    action="/admin/upload"
+                    name="files"
+                    multiple
+                    :limit="limit"
+                    :on-exceed="handleExceed"
+                    :auto-upload="false"
+                    :on-success="successHandler"
+                    :on-error="errorHandler"
+            >
                 <template #trigger>
-                  <el-button type="primary">选择文件</el-button>
+                    <el-button type="primary">选择文件</el-button>
                 </template>
                 <el-button class="ml-30" type="success" @click="submitUpload">
-                  开始上传上传
+                    开始上传上传
                 </el-button>
                 <template #tip>
-                  <div class="el-upload__tip text-red">
-                    限制{{limit}}个文件
-                  </div>
+                    <div class="el-upload__tip text-red">
+                        限制{{limit}}个文件
+                    </div>
                 </template>
-              </el-upload>
-            </div>
-            <div class="middle">
-              <el-button  type="success" @click="getAll">获取列表</el-button>
-            </div>
-            <div class="clearfix"></div>
-            <div class="bottom">
-              <el-table ref="tableRef" :data="tableData" border style="width: 100%">
+            </el-upload>
+        </div>
+        <div class="middle">
+            <el-button  type="success" @click="getAll">获取列表</el-button>
+        </div>
+        <div class="clearfix"></div>
+        <div class="bottom">
+            <el-table ref="tableRef" :data="tableData" border style="width: 100%">
                 <el-table-column prop="fileId" label="FileId"  width="300"></el-table-column>
                 <el-table-column prop="fileName" label="FileName"  ></el-table-column>
                 <el-table-column prop="mime" label="Mime"  ></el-table-column>
                 <el-table-column prop="size" label="Size"  ></el-table-column>
+                <el-table-column prop="creation" label="creation" width="250" ></el-table-column>
                 <el-table-column label="Action">
-                  <template #default="scope">
-                    <el-button size="small" type="danger" @click="del(scope.$index,scope.row)">删除</el-button>
-                    <el-link  :href="'/'+scope.row.fileId" target="_blank" type="primary">查看</el-link>
-                  </template>
+                    <template #default="scope">
+                        <el-button size="small" type="danger" @click="del(scope.$index,scope.row)">删除</el-button>
+                        <el-link  :href="'/'+scope.row.fileId" target="_blank" type="primary">查看</el-link>
+                    </template>
                 </el-table-column>
-              </el-table>
-            </div>
+            </el-table>
+            <el-pagination
+                    :page-size="pagination.pageSize"
+                    @current-change="handlerCurrentChange"
+                    layout="total,prev, pager, next"
+                    :total="pagination.total"
+                    v-model:currentPage="pagination.page"
+            />
         </div>
     </div>
+</div>
 
-    <script>
-      const App = {
+<script>
+    const App = {
         data() {
-          return {
-            limit:2,
-            tableData:[]
-          };
+            return {
+                limit:2,
+                tableData:[],
+                pagination:{
+                    pageSize:20,
+                    total:0,
+                    page:1
+                }
+            };
         },
         methods:{
-          handleExceed(files){
-            this.$refs.upload.clearFiles();
-            const file=files[0];
-            file.uid = ElementPlus.genFileId();
-            this.$refs.upload.handleStart(file);
-          },
-          submitUpload(){
-            this.$refs.upload.submit();
-          },
-          successHandler(response){
-            response.forEach(res => {
-              this.tableData.push(res.data);
-            });
-          },
-          del(index,row){
-            axios.post('/admin/delete/'+row.fileId).then(resp=>{
-               if(resp.data.trim() == "ok"){
-                  this.tableData.splice(index,1);
-               }
-            })
-          },
-          getAll(){
-            axios.get('/admin/getall').then(resp=>{
-              const result=resp.data;
-              this.tableData=result.data;
-            });
-          }
+            handleExceed(files){
+                this.$refs.upload.clearFiles();
+                const file=files[0];
+                file.uid = ElementPlus.genFileId();
+                this.$refs.upload.handleStart(file);
+            },
+            submitUpload(){
+                this.$refs.upload.submit()
+            },
+            successHandler(response){
+                response.forEach(res => {
+                    this.tableData.push(res.data);
+                });
+            },
+            errorHandler(error){
+                alert("上传失败")
+                //console.log(error.message)
+            },
+            del(index,row){
+                axios.post('/admin/delete/'+row.fileId).then(resp=>{
+                    if(resp.data.success){
+                        this.tableData.splice(index,1);
+                    }
+                })
+            },
+            getAll(){
+                axios.get('/admin/getall',{params:{page:this.pagination.page,pageSize:this.pagination.pageSize}}).then(resp=>{
+                    const result=resp.data;
+                    this.pagination.total=result.total
+                    this.tableData=result.data;
+                });
+            },
+            handlerCurrentChange(){
+                this.getAll()
+            }
         }
-      };
-        const app = Vue.createApp(App);
-        app.use(ElementPlus);
-        app.mount("#app")
-    </script>
+    };
+    const app = Vue.createApp(App);
+    app.use(ElementPlus);
+    app.mount("#app")
+</script>
 
 </body>
 </html>
