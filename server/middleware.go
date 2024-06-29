@@ -2,11 +2,12 @@ package server
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
 	"go-img/util"
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
 func authFunc() gin.HandlerFunc {
@@ -22,10 +23,10 @@ func authFunc() gin.HandlerFunc {
 
 func getRemoteIp(req *http.Request) string {
 	remoteAddr := req.RemoteAddr
-	if ip := req.Header.Get("X-Real-IP"); ip != "" {
-		remoteAddr = ip
-	} else if ip = req.Header.Get("X-Forwarded-For"); ip != "" {
+	if ip := req.Header.Get("X-Forwarded-For"); ip != "" {
 		remoteAddr = strings.Split(ip, ",")[0]
+	} else if ip = req.Header.Get("X-Real-IP"); ip != "" {
+		remoteAddr = ip
 	} else {
 		remoteAddr, _, _ = net.SplitHostPort(remoteAddr)
 	}
